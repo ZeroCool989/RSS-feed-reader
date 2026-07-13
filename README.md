@@ -2,6 +2,19 @@
 
 A customizable RSS/Atom content aggregator built for the [Frontend Mentor](https://www.frontendmentor.io) **Frontpage** product challenge. One calm, organized reading dashboard for every blog, newsletter and changelog you follow.
 
+![The Frontpage dashboard in guest mode: sidebar with categories and unread counts, article list with sources and timestamps](docs/screenshot.png)
+
+**Links:** [Repository](https://github.com/ZeroCool989/RSS-feed-reader) · Live site: coming soon (Vercel) — try it locally with `npm run dev` and open `/reader?guest=1`
+
+### Built with
+
+- [Next.js 15](https://nextjs.org/) (App Router) + [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS v4](https://tailwindcss.com/) with the challenge brand-kit tokens
+- [Zustand](https://zustand.docs.pmnd.rs/) with `persist` (localStorage)
+- [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser) + [sanitize-html](https://github.com/apostrophecms/sanitize-html) for server-side feed processing
+- [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) (86 unit + 30 e2e tests)
+- [Lucide](https://lucide.dev/) icons
+
 ## Table of contents
 
 - [Overview](#overview)
@@ -60,6 +73,10 @@ I built the **frontend-only path** from the spec (`spec/technical-requirements.m
 4. Verified with an automated Playwright suite driving real Chrome: 15 checks covering guest boot, keyboard nav, reader, bookmarks, digest, search, layouts, palette, dark mode, mobile overlay, onboarding, and the full OPML import flow against the provided sample file (20 unique feeds found, 17 imported, 3 correctly reported as dead/404).
 
 Real-feed testing caught real-world issues an idealized parser would miss: fast-xml-parser's entity-expansion guard rejecting legitimate full-content feeds, Simon Willison's feed shipping full articles in `<summary>` instead of `<content>`, Vercel's Atom feed using structured `type="xhtml"` content (which loses element order in a naive parse), feeds referencing `http://` images that CSP blocks, and two of the curated feeds having genuinely died since the sample data was written (they now demonstrate the error-handling UI in guest mode).
+
+### Reflection
+
+The single hardest problem was Atom's `type="xhtml"` content. My parser flattens XML into plain objects, which silently loses sibling order — so a Vercel article came out as all its paragraphs first, then all its headings. Fixing it meant running a second, order-preserving parse just for those entries and writing a serializer to turn the node tree back into HTML. The lesson that stuck: when a format allows structured markup inside a field, "parse it like data" and "preserve it like a document" are different requirements, and you have to notice which one you actually have. The other lasting takeaway is how much value came from testing against live feeds instead of fixtures — nearly every interesting bug in this project was found by pointing the code at the real world.
 
 ## Design decisions
 
