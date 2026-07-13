@@ -29,10 +29,13 @@ export default function AddFeedDialog() {
   } = useStore();
   const [tab, setTab] = useState<Tab>(subscriptions.length === 0 ? "discover" : "url");
 
-  // Respect the tab requested by the opener (e.g. onboarding's "Import OPML")
+  // Respect the tab requested by the opener (e.g. onboarding's "Import OPML").
+  // Subscriptions are read fresh from the store so the dependency array is
+  // complete without re-running mid-session as feeds are added.
   useEffect(() => {
-    if (addFeedOpen) setTab(addFeedTab ?? (subscriptions.length === 0 ? "discover" : "url"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!addFeedOpen) return;
+    const hasSubscriptions = useStore.getState().subscriptions.length > 0;
+    setTab(addFeedTab ?? (hasSubscriptions ? "url" : "discover"));
   }, [addFeedOpen, addFeedTab]);
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(addFeedOpen, dialogRef);
@@ -129,6 +132,11 @@ export default function AddFeedDialog() {
     let done = 0;
     const queue = [...opmlEntries];
     const total = queue.length;
+    // Snapshot existing URLs at import start — concurrent workers must not
+    // consult a render-time memo that could be stale mid-import.
+    const existingUrls = new Set(
+      useStore.getState().subscriptions.map((s) => normalizeFeedUrl(s.feedUrl))
+    );
     // Categories are resolved up front so concurrent workers don't race to
     // create the same one.
     const categoryIds = new Map(
@@ -138,7 +146,7 @@ export default function AddFeedDialog() {
       for (;;) {
         const entry = queue.shift();
         if (!entry) return;
-        if (subscribedUrls.has(normalizeFeedUrl(entry.xmlUrl))) {
+        if (existingUrls.has(normalizeFeedUrl(entry.xmlUrl))) {
           result.duplicates++;
         } else {
           const outcome = await addFeed(

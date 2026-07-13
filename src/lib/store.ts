@@ -50,7 +50,7 @@ async function fetchFeed(url: string, fresh = false): Promise<FetchFeedResult> {
 }
 
 async function pool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
+  const results: R[] = Array.from({ length: items.length }) as R[];
   let next = 0;
   async function worker() {
     while (next < items.length) {
