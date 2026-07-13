@@ -46,9 +46,12 @@ function Highlight({ text, query }: { text: string; query?: string }) {
 /* -------------------------------- row actions ------------------------------- */
 
 function RowActions({ article, visibleOnHover = true }: { article: Article; visibleOnHover?: boolean }) {
-  const { readIds, toggleRead, toggleBookmark, bookmarks } = useStore();
-  const isRead = Boolean(readIds[article.id]);
-  const saved = bookmarks.some((b) => b.id === article.id);
+  // Per-row primitive selectors: a row's actions re-render only when its own
+  // read/saved state flips, not on every store change.
+  const isRead = useStore((s) => Boolean(s.readIds[article.id]));
+  const saved = useStore((s) => s.bookmarks.some((b) => b.id === article.id));
+  const toggleRead = useStore((s) => s.toggleRead);
+  const toggleBookmark = useStore((s) => s.toggleBookmark);
   return (
     <span
       className={cn(
@@ -272,7 +275,10 @@ export default function ItemList({
   query?: string;
   emptyMessage: React.ReactNode;
 }) {
-  const { subscriptions, readIds, markRead, openArticle } = useStore();
+  const subscriptions = useStore((s) => s.subscriptions);
+  const readIds = useStore((s) => s.readIds);
+  const markRead = useStore((s) => s.markRead);
+  const openArticle = useStore((s) => s.openArticle);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 

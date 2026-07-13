@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, FileUp, Globe, Loader2, Plus, Sparkles, X } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/lib/store";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { parseOpml, type OpmlEntry } from "@/lib/opml";
@@ -17,16 +18,17 @@ interface ImportReport {
 }
 
 export default function AddFeedDialog() {
-  const {
-    addFeedOpen,
-    addFeedTab,
-    setAddFeedOpen,
-    categories,
-    subscriptions,
-    addFeed,
-    addCategory,
-    showToast,
-  } = useStore();
+  const { addFeedOpen, addFeedTab, categories, subscriptions } = useStore(
+    useShallow((s) => ({
+      addFeedOpen: s.addFeedOpen,
+      addFeedTab: s.addFeedTab,
+      categories: s.categories,
+      subscriptions: s.subscriptions,
+    }))
+  );
+  const setAddFeedOpen = useStore((s) => s.setAddFeedOpen);
+  const addFeed = useStore((s) => s.addFeed);
+  const showToast = useStore((s) => s.showToast);
   const [tab, setTab] = useState<Tab>(subscriptions.length === 0 ? "discover" : "url");
 
   // Respect the tab requested by the opener (e.g. onboarding's "Import OPML").

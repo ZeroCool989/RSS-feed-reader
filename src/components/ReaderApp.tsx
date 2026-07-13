@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowUp, BookmarkX, FileUp, Globe, Inbox, Rss, SearchX, Sparkles, X } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore, articlesForView } from "@/lib/store";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { pluralize } from "@/lib/utils";
@@ -20,7 +21,8 @@ import Toast from "./Toast";
 /* ------------------------------- empty states ------------------------------ */
 
 function Onboarding() {
-  const { seedGuest, setAddFeedOpen, refreshAll } = useStore();
+  const seedGuest = useStore((s) => s.seedGuest);
+  const setAddFeedOpen = useStore((s) => s.setAddFeedOpen);
   const options = [
     {
       icon: Sparkles,
@@ -28,9 +30,8 @@ function Onboarding() {
       body: "19 hand-picked sources across Frontend, Design, DevOps, Tech and AI. The fastest way to a full front page.",
       cta: "Load the starter pack",
       primary: true,
-      action: async () => {
+      action: () => {
         seedGuest();
-        await Promise.resolve();
         useStore.getState().refreshAll();
       },
     },
@@ -49,7 +50,6 @@ function Onboarding() {
       action: () => setAddFeedOpen(true, "opml"),
     },
   ];
-  void refreshAll;
 
   return (
     <div className="mx-auto max-w-feed px-6 py-14">
@@ -116,21 +116,26 @@ function SkeletonList() {
 
 export default function ReaderApp() {
   const searchParams = useSearchParams();
-  const store = useStore();
-  const {
-    hydrated,
-    seeded,
-    subscriptions,
-    categories,
-    view,
-    prefs,
-    setPrefs,
-    refreshingAll,
-    seedGuest,
-    refreshAll,
-    newItemsNotice,
-    openArticleId,
-  } = store;
+  // Subscribe to precise slices — a bare useStore() would re-render this
+  // shell on every store change (each toast, each refresh tick).
+  const { hydrated, subscriptions, categories, view, prefs, refreshingAll, newItemsNotice, openArticleId, articles, bookmarks, readIds } =
+    useStore(
+      useShallow((s) => ({
+        hydrated: s.hydrated,
+        subscriptions: s.subscriptions,
+        categories: s.categories,
+        view: s.view,
+        prefs: s.prefs,
+        refreshingAll: s.refreshingAll,
+        newItemsNotice: s.newItemsNotice,
+        openArticleId: s.openArticleId,
+        articles: s.articles,
+        bookmarks: s.bookmarks,
+        readIds: s.readIds,
+      }))
+    );
+  const setPrefs = useStore((s) => s.setPrefs);
+  const refreshAll = useStore((s) => s.refreshAll);
 
   const [selectedIndex, setSelectedIndexRaw] = useState(-1);
   const setSelectedIndex = useCallback(
@@ -152,7 +157,7 @@ export default function ReaderApp() {
     if (useStore.getState().subscriptions.length > 0) {
       refreshAll();
     }
-  }, [hydrated, isGuest, seedGuest, refreshAll]);
+  }, [hydrated, isGuest, refreshAll]);
 
   /* Configurable auto-refresh. */
   useEffect(() => {
@@ -169,10 +174,11 @@ export default function ReaderApp() {
 
   /* Current article list (also drives the reader's next/prev). */
   const baseArticles = useMemo(() => {
+    const data = { subscriptions, articles, bookmarks };
     if (view.type === "search") {
       const q = view.query.toLowerCase();
       const subsById = new Map(subscriptions.map((s) => [s.id, s]));
-      return articlesForView(store, { type: "all" }).filter((a) => {
+      return articlesForView(data, { type: "all" }).filter((a) => {
         const source = subsById.get(a.subscriptionId);
         return (
           a.title.toLowerCase().includes(q) ||
@@ -183,20 +189,18 @@ export default function ReaderApp() {
       });
     }
     if (view.type === "digest" || view.type === "feeds-manage") return [];
-    return articlesForView(store, view);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.articles, store.bookmarks, subscriptions, viewKey, view]);
+    return articlesForView(data, view);
+  }, [articles, bookmarks, subscriptions, view]);
 
-  const articles = useMemo(
+  const visibleArticles = useMemo(
     () =>
       prefs.hideRead && view.type !== "saved"
-        ? baseArticles.filter((a) => !store.readIds[a.id])
+        ? baseArticles.filter((a) => !readIds[a.id])
         : baseArticles,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [baseArticles, prefs.hideRead, store.readIds, view.type]
+    [baseArticles, prefs.hideRead, readIds, view.type]
   );
 
-  useKeyboard({ articles, selectedIndex, setSelectedIndex });
+  useKeyboard({ articles: visibleArticles, selectedIndex, setSelectedIndex });
 
   if (!hydrated) {
     return (
@@ -288,7 +292,7 @@ export default function ReaderApp() {
           <Onboarding />
         ) : (
           <>
-            <TopBar title={title} itemCount={listView ? articles.length : undefined} />
+            <TopBar title={title} itemCount={listView ? visibleArticles.length : undefined} />
 
             {/* Guest nudge — gentle, dismissible */}
             {isGuest && !guestBannerDismissed && (
@@ -344,11 +348,11 @@ export default function ReaderApp() {
                 <DigestView />
               ) : view.type === "feeds-manage" ? (
                 <ManageFeeds />
-              ) : refreshingAll && articles.length === 0 ? (
+              ) : refreshingAll && visibleArticles.length === 0 ? (
                 <SkeletonList />
               ) : (
                 <ItemList
-                  articles={articles}
+                  articles={visibleArticles}
                   layout={prefs.layout}
                   selectedIndex={selectedIndex}
                   query={view.type === "search" ? view.query : undefined}
@@ -361,7 +365,7 @@ export default function ReaderApp() {
       </div>
 
       {/* Overlays */}
-      {openArticleId && <ArticleReader articles={articles} />}
+      {openArticleId && <ArticleReader articles={visibleArticles} />}
       <AddFeedDialog />
       <CommandPalette />
       <ShortcutsHelp />

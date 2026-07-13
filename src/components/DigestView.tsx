@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ArrowRight, CheckCheck, Coffee, Sparkles } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/lib/store";
 import type { Article } from "@/lib/types";
 import { fullDate, pluralize, relativeTime } from "@/lib/utils";
@@ -17,8 +18,19 @@ const PER_CATEGORY = 5;
  * most recent unread items so the view is never empty while content exists.
  */
 export default function DigestView() {
-  const { subscriptions, categories, articles, readIds, digestSince, markRead, openArticle, markAllRead, setView } =
-    useStore();
+  const { subscriptions, categories, articles, readIds, digestSince } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      categories: s.categories,
+      articles: s.articles,
+      readIds: s.readIds,
+      digestSince: s.digestSince,
+    }))
+  );
+  const markRead = useStore((s) => s.markRead);
+  const openArticle = useStore((s) => s.openArticle);
+  const markAllRead = useStore((s) => s.markAllRead);
+  const setView = useStore((s) => s.setView);
 
   const digest = useMemo(() => {
     const all: Article[] = subscriptions

@@ -17,6 +17,7 @@ import {
   Settings2,
   Sparkles,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/lib/store";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { cn } from "@/lib/utils";
@@ -31,18 +32,19 @@ interface Command {
 }
 
 export default function CommandPalette() {
-  const store = useStore();
-  const {
-    commandPaletteOpen,
-    setCommandPaletteOpen,
-    subscriptions,
-    categories,
-    setView,
-    setPrefs,
-    refreshAll,
-    markAllRead,
-    setAddFeedOpen,
-  } = store;
+  const { commandPaletteOpen, subscriptions, categories } = useStore(
+    useShallow((s) => ({
+      commandPaletteOpen: s.commandPaletteOpen,
+      subscriptions: s.subscriptions,
+      categories: s.categories,
+    }))
+  );
+  const setCommandPaletteOpen = useStore((s) => s.setCommandPaletteOpen);
+  const setView = useStore((s) => s.setView);
+  const setPrefs = useStore((s) => s.setPrefs);
+  const refreshAll = useStore((s) => s.refreshAll);
+  const markAllRead = useStore((s) => s.markAllRead);
+  const setAddFeedOpen = useStore((s) => s.setAddFeedOpen);
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);

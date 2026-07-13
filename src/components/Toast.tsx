@@ -4,7 +4,8 @@ import { X } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function Toast() {
-  const { toast, dismissToast } = useStore();
+  const toast = useStore((s) => s.toast);
+  const dismissToast = useStore((s) => s.dismissToast);
   if (!toast) return null;
 
   return (

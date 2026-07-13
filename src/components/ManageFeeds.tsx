@@ -14,6 +14,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore, healthOf } from "@/lib/store";
 import { buildOpml } from "@/lib/opml";
 import type { FeedHealth, Subscription } from "@/lib/types";
@@ -40,13 +41,16 @@ function HealthBadge({ health, detail }: { health: FeedHealth; detail?: string |
 }
 
 function FeedRow({ sub }: { sub: Subscription }) {
-  const { categories, updateSubscription, removeFeed, refreshFeed, refreshing, showToast } =
-    useStore();
+  const categories = useStore((s) => s.categories);
+  const busy = useStore((s) => Boolean(s.refreshing[sub.id]));
+  const updateSubscription = useStore((s) => s.updateSubscription);
+  const removeFeed = useStore((s) => s.removeFeed);
+  const refreshFeed = useStore((s) => s.refreshFeed);
+  const showToast = useStore((s) => s.showToast);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(sub.customTitle ?? sub.title);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const health = healthOf(sub);
-  const busy = Boolean(refreshing[sub.id]);
 
   function saveTitle() {
     const trimmed = title.trim();
@@ -160,8 +164,18 @@ function FeedRow({ sub }: { sub: Subscription }) {
 }
 
 export default function ManageFeeds() {
-  const { subscriptions, categories, setAddFeedOpen, renameCategory, deleteCategory, moveCategory, prefs, setPrefs } =
-    useStore();
+  const { subscriptions, categories, prefs } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      categories: s.categories,
+      prefs: s.prefs,
+    }))
+  );
+  const setAddFeedOpen = useStore((s) => s.setAddFeedOpen);
+  const renameCategory = useStore((s) => s.renameCategory);
+  const deleteCategory = useStore((s) => s.deleteCategory);
+  const moveCategory = useStore((s) => s.moveCategory);
+  const setPrefs = useStore((s) => s.setPrefs);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 

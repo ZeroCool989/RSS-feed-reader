@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useShallow } from "zustand/react/shallow";
 import { useStore, unreadCount, type View } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import Favicon from "./Favicon";
@@ -62,18 +63,22 @@ function NavRow({
 }
 
 export default function Sidebar() {
-  const {
-    subscriptions,
-    categories,
-    view,
-    setView,
-    sidebarOpen,
-    setSidebarOpen,
-    bookmarks,
-    setAddFeedOpen,
-    addCategory,
-  } = useStore();
-  const state = useStore();
+  const { subscriptions, categories, view, sidebarOpen, bookmarkCount, articles, readIds } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      categories: s.categories,
+      view: s.view,
+      sidebarOpen: s.sidebarOpen,
+      bookmarkCount: s.bookmarks.length,
+      articles: s.articles,
+      readIds: s.readIds,
+    }))
+  );
+  const setView = useStore((s) => s.setView);
+  const setSidebarOpen = useStore((s) => s.setSidebarOpen);
+  const setAddFeedOpen = useStore((s) => s.setAddFeedOpen);
+  const addCategory = useStore((s) => s.addCategory);
+  const counts = { articles, readIds };
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -83,7 +88,7 @@ export default function Sidebar() {
     [categories]
   );
   const uncategorized = subscriptions.filter((s) => s.categoryId === null);
-  const totalUnread = unreadCount(state, subscriptions.map((s) => s.id));
+  const totalUnread = unreadCount(counts, subscriptions.map((s) => s.id));
 
   const isActive = (v: View) =>
     (v.type === view.type && (!("id" in v) || ("id" in view && v.id === view.id))) as boolean;
@@ -137,7 +142,7 @@ export default function Sidebar() {
             onClick={() => setView({ type: "saved" })}
             icon={<Bookmark className="size-4" />}
             label="Saved"
-            count={bookmarks.length}
+            count={bookmarkCount}
           />
           <NavRow
             active={isActive({ type: "feeds-manage" })}
@@ -184,7 +189,7 @@ export default function Sidebar() {
 
         {sortedCategories.map((cat) => {
           const feeds = subscriptions.filter((s) => s.categoryId === cat.id);
-          const catUnread = unreadCount(state, feeds.map((f) => f.id));
+          const catUnread = unreadCount(counts, feeds.map((f) => f.id));
           const isCollapsed = collapsed[cat.id];
           return (
             <div key={cat.id} className="mt-0.5">
@@ -229,7 +234,7 @@ export default function Sidebar() {
                       </span>
                     }
                     label={feed.customTitle ?? feed.title}
-                    count={unreadCount(state, [feed.id])}
+                    count={unreadCount(counts, [feed.id])}
                   />
                 ))}
             </div>
@@ -247,7 +252,7 @@ export default function Sidebar() {
                 onClick={() => setView({ type: "feed", id: feed.id })}
                 icon={<Favicon src={feed.iconUrl} size={16} />}
                 label={feed.customTitle ?? feed.title}
-                count={unreadCount(state, [feed.id])}
+                count={unreadCount(counts, [feed.id])}
               />
             ))}
           </div>

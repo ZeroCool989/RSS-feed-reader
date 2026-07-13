@@ -505,7 +505,10 @@ export const useStore = create<FrontpageState>()(
 
 /* -------------------------------- selectors -------------------------------- */
 
-export function articlesForView(state: FrontpageState, view: View): Article[] {
+export function articlesForView(
+  state: Pick<FrontpageState, "subscriptions" | "articles" | "bookmarks">,
+  view: View
+): Article[] {
   const { subscriptions, articles, bookmarks } = state;
   let subIds: string[];
   switch (view.type) {
@@ -528,7 +531,10 @@ export function articlesForView(state: FrontpageState, view: View): Article[] {
   });
 }
 
-export function unreadCount(state: FrontpageState, subIds: string[]): number {
+export function unreadCount(
+  state: Pick<FrontpageState, "articles" | "readIds">,
+  subIds: string[]
+): number {
   let count = 0;
   for (const id of subIds) {
     for (const a of state.articles[id] ?? []) {

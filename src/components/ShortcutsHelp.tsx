@@ -38,7 +38,8 @@ const groups: Array<{ title: string; rows: Array<[string, string]> }> = [
 ];
 
 export default function ShortcutsHelp() {
-  const { shortcutsOpen, setShortcutsOpen } = useStore();
+  const shortcutsOpen = useStore((s) => s.shortcutsOpen);
+  const setShortcutsOpen = useStore((s) => s.setShortcutsOpen);
   const panelRef = useRef<HTMLDivElement>(null);
   useDialogFocus(shortcutsOpen, panelRef);
   if (!shortcutsOpen) return null;

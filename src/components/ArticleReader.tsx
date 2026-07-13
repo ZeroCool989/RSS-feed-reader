@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/lib/store";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 import type { Article } from "@/lib/types";
@@ -23,15 +24,17 @@ export default function ArticleReader({
 }: {
   articles: Article[];
 }) {
-  const {
-    openArticleId,
-    openArticle,
-    subscriptions,
-    markRead,
-    toggleBookmark,
-    bookmarks,
-    prefs,
-  } = useStore();
+  const { openArticleId, subscriptions, bookmarks, readerFontSize } = useStore(
+    useShallow((s) => ({
+      openArticleId: s.openArticleId,
+      subscriptions: s.subscriptions,
+      bookmarks: s.bookmarks,
+      readerFontSize: s.prefs.readerFontSize,
+    }))
+  );
+  const openArticle = useStore((s) => s.openArticle);
+  const markRead = useStore((s) => s.markRead);
+  const toggleBookmark = useStore((s) => s.toggleBookmark);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +75,7 @@ export default function ArticleReader({
   if (!article) return null;
   const saved = bookmarks.some((b) => b.id === article.id);
   const fontSize =
-    prefs.readerFontSize === "sm" ? "0.9375rem" : prefs.readerFontSize === "lg" ? "1.1875rem" : undefined;
+    readerFontSize === "sm" ? "0.9375rem" : readerFontSize === "lg" ? "1.1875rem" : undefined;
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-30 flex flex-col bg-bg-primary" role="dialog" aria-modal="true" aria-label={article.title}>

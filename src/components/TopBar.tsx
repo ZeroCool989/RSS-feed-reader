@@ -14,6 +14,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/lib/store";
 import type { LayoutMode } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
@@ -25,18 +26,20 @@ const layouts: Array<{ mode: LayoutMode; icon: typeof List; label: string }> = [
 ];
 
 export default function TopBar({ title, itemCount }: { title: string; itemCount?: number }) {
-  const {
-    view,
-    setView,
-    prefs,
-    setPrefs,
-    refreshAll,
-    refreshingAll,
-    lastRefreshAt,
-    setSidebarOpen,
-    markAllRead,
-    subscriptions,
-  } = useStore();
+  const { view, prefs, refreshingAll, lastRefreshAt, hasFeeds } = useStore(
+    useShallow((s) => ({
+      view: s.view,
+      prefs: s.prefs,
+      refreshingAll: s.refreshingAll,
+      lastRefreshAt: s.lastRefreshAt,
+      hasFeeds: s.subscriptions.length > 0,
+    }))
+  );
+  const setView = useStore((s) => s.setView);
+  const setPrefs = useStore((s) => s.setPrefs);
+  const refreshAll = useStore((s) => s.refreshAll);
+  const setSidebarOpen = useStore((s) => s.setSidebarOpen);
+  const markAllRead = useStore((s) => s.markAllRead);
   const [query, setQuery] = useState(view.type === "search" ? view.query : "");
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -166,7 +169,7 @@ export default function TopBar({ title, itemCount }: { title: string; itemCount?
 
         <button
           onClick={() => refreshAll(true)}
-          disabled={refreshingAll || subscriptions.length === 0}
+          disabled={refreshingAll || !hasFeeds}
           title="Refresh all feeds"
           aria-label="Refresh all feeds"
           className="rounded-md p-2 text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50"
