@@ -23,3 +23,6 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+
+# AI tooling (local only)
+.claude/
