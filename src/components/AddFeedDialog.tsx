@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, FileUp, Globe, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { parseOpml, type OpmlEntry } from "@/lib/opml";
 import { cn, hostnameOf, normalizeFeedUrl } from "@/lib/utils";
 import sampleFeeds from "@/data/sample-feeds.json";
@@ -34,6 +35,7 @@ export default function AddFeedDialog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addFeedOpen, addFeedTab]);
   const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(addFeedOpen, dialogRef);
 
   // --- by URL state
   const [url, setUrl] = useState("");

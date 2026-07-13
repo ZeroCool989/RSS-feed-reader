@@ -9,6 +9,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import type { Article } from "@/lib/types";
 import { cn, fullDate, hostnameOf } from "@/lib/utils";
 import Favicon from "./Favicon";
@@ -32,12 +33,14 @@ export default function ArticleReader({
     prefs,
   } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const index = useMemo(
     () => articles.findIndex((a) => a.id === openArticleId),
     [articles, openArticleId]
   );
   const article = index >= 0 ? articles[index] : null;
+  useDialogFocus(Boolean(article), rootRef);
   const sub = article
     ? subscriptions.find((s) => s.id === article.subscriptionId)
     : null;
@@ -72,7 +75,7 @@ export default function ArticleReader({
     prefs.readerFontSize === "sm" ? "0.9375rem" : prefs.readerFontSize === "lg" ? "1.1875rem" : undefined;
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-bg-primary" role="dialog" aria-modal="true" aria-label={article.title}>
+    <div ref={rootRef} className="fixed inset-0 z-30 flex flex-col bg-bg-primary" role="dialog" aria-modal="true" aria-label={article.title}>
       {/* Reader toolbar */}
       <header className="flex items-center gap-2 border-b border-border-subtle px-4 py-2.5 sm:px-6">
         <button

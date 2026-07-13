@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { X } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const groups: Array<{ title: string; rows: Array<[string, string]> }> = [
   {
@@ -37,6 +39,8 @@ const groups: Array<{ title: string; rows: Array<[string, string]> }> = [
 
 export default function ShortcutsHelp() {
   const { shortcutsOpen, setShortcutsOpen } = useStore();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(shortcutsOpen, panelRef);
   if (!shortcutsOpen) return null;
 
   return (
@@ -47,7 +51,7 @@ export default function ShortcutsHelp() {
       aria-label="Keyboard shortcuts"
     >
       <div className="absolute inset-0 bg-black/40" onClick={() => setShortcutsOpen(false)} aria-hidden />
-      <div className="relative w-full max-w-2xl rounded-xl border border-border bg-surface p-6 shadow-lg">
+      <div ref={panelRef} className="relative w-full max-w-2xl rounded-xl border border-border bg-surface p-6 shadow-lg">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Keyboard shortcuts</h2>
           <button

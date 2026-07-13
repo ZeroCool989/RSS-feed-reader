@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { cn } from "@/lib/utils";
 
 interface Command {
@@ -46,6 +47,8 @@ export default function CommandPalette() {
   const [index, setIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(commandPaletteOpen, panelRef);
 
   const commands = useMemo<Command[]>(() => {
     const close = () => setCommandPaletteOpen(false);
@@ -151,7 +154,7 @@ export default function CommandPalette() {
         onClick={() => setCommandPaletteOpen(false)}
         aria-hidden
       />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+      <div ref={panelRef} className="relative w-full max-w-lg overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
         <div className="flex items-center gap-3 border-b border-border-subtle px-4">
           <Search className="size-4 shrink-0 text-text-tertiary" />
           <input
