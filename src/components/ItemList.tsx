@@ -9,6 +9,20 @@ import Favicon from "./Favicon";
 
 const PAGE_SIZE = 60;
 
+/**
+ * Rows are custom role="button" elements — native buttons activate on both
+ * Enter and Space, so ours must too. Space also needs preventDefault so the
+ * page doesn't scroll.
+ */
+function rowKeyDown(onOpen: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen();
+    }
+  };
+}
+
 /* ------------------------------ text highlight ----------------------------- */
 
 function Highlight({ text, query }: { text: string; query?: string }) {
@@ -92,7 +106,7 @@ function CompactRow({ article, sub, isRead, selected, query, onOpen }: RowProps)
   return (
     <div
       onClick={onOpen}
-      onKeyDown={(e) => e.key === "Enter" && onOpen()}
+      onKeyDown={rowKeyDown(onOpen)}
       role="button"
       tabIndex={0}
       data-selected={selected || undefined}
@@ -132,7 +146,7 @@ function ListRow({ article, sub, isRead, selected, query, onOpen }: RowProps) {
   return (
     <article
       onClick={onOpen}
-      onKeyDown={(e) => e.key === "Enter" && onOpen()}
+      onKeyDown={rowKeyDown(onOpen)}
       role="button"
       tabIndex={0}
       data-selected={selected || undefined}
@@ -188,7 +202,7 @@ function Card({ article, sub, isRead, selected, query, onOpen }: RowProps) {
   return (
     <article
       onClick={onOpen}
-      onKeyDown={(e) => e.key === "Enter" && onOpen()}
+      onKeyDown={rowKeyDown(onOpen)}
       role="button"
       tabIndex={0}
       data-selected={selected || undefined}
